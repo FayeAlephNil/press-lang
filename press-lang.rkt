@@ -16,7 +16,7 @@
       env)]
     [`(,(or 'lambda 'λ) ,symblist ,body)
      #:when (and (list? symblist) ((all? symbol?) symblist))
-     (cons (lambda (args)
+     (cons (lambda args
              (if (= (length args) (length symblist))
                  (let*
                      ([proc (lambda (symb arg result)
@@ -31,13 +31,13 @@
              env)]
     [`(,(or 'lambda 'λ) ,x ,body)
      #:when (symbol? x)
-     (cons (lambda (args)
+     (cons (lambda args
              (car (evalu evalu body
                          (dict-set env x (thunk args)))))
            env)]
     [(list op args ...)
      (cons
-      ((car (evalu evalu op env))
+      (apply (car (evalu evalu op env))
        (map (lambda (arg) (car (evalu evalu arg env))) args))
       env)]
     [boi (error (string-append "Syntax Error, No Match for: " (~a boi)))]))
@@ -144,3 +144,8 @@
   (apply eval-all (cons my-eval (cons env (cons result exprs)))))
 
 (define empty-env (hash))
+
+(define basic-env
+  `#hash((+ . ,(thunk +))
+        (- . ,(thunk -))
+        (* . ,(thunk *))))
