@@ -1,0 +1,4 @@
+#+TITLE: The Press LISP Programming Language
+
+This is a small LISP programming language defined in LISP (Racket, to be particular)! If you want to fork it, I recommend installing the pre-commit hook with
+`ln -s ../../pre-commit.sh .git/hooks/pre-commit`
