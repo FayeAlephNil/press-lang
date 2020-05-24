@@ -10,8 +10,8 @@
     [x
      #:when (symbol? x)
      (cons
-      (if (hash-has-key? env x)
-          (hash-ref env x)
+      (if (dict-has-key? env x)
+          ((dict-ref env x))
           (error (string-append "Variable not declared: " (symbol->string x))))
       env)]
     [`(,(or 'lambda 'λ) ,symblist ,body)
@@ -20,7 +20,7 @@
              (if (= (length args) (length symblist))
                  (let*
                      ([proc (lambda (symb arg result)
-                              (hash-set result symb arg))]
+                              (dict-set result symb (thunk arg)))]
                       [new-env (foldl proc env symblist args)])
                    (car (evalu evalu body new-env)))
                  (error
@@ -33,7 +33,7 @@
      #:when (symbol? x)
      (cons (lambda (args)
              (car (evalu evalu body
-                         (hash-set env x args))))
+                         (dict-set env x (thunk args)))))
            env)]
     [(list op args ...)
      (cons
@@ -106,7 +106,20 @@
           (cons #f (evalu2 evalu2 to-eval env)))]
        [boi
         (cons #t (cons boi env))]))
-  evalu))
+   evalu))
+
+(define (add-def evalu)
+  (decor-full
+   (lambda (evalu2 expr env)
+     (match expr
+       [`(def ,x ,body)
+        #:when (symbol? x)
+        (letrec ([def-env
+                  (dict-set env x (thunk (car (evalu2 evalu2 body def-env))))])
+          (cons #f (cons '() def-env)))]
+       [boi
+        (cons #t (cons boi env))]))
+   evalu))
 
 (define (eval-all evalu env result . exprs)
   (if (empty? exprs)
@@ -120,11 +133,12 @@
   (apply eval-all (cons basic-eval (cons env (cons result exprs)))))
 
 (define my-eval
-  (add-nums
-   (add-bools
-    (add-quote
-     (add-eval
-      basic-eval)))))
+  (add-def
+    (add-nums
+     (add-bools
+      (add-quote
+       (add-eval
+        basic-eval))))))
 
 (define (my-eval-all env result . exprs)
   (apply eval-all (cons my-eval (cons env (cons result exprs)))))
