@@ -121,6 +121,18 @@
         (cons #t (cons boi env))]))
    evalu))
 
+(define (add-if evalu)
+  (decor-full
+   (lambda (evalu2 expr env)
+     (match expr
+       [`(if ,p?-expr ,then-expr ,else-expr)
+        (if (car (evalu2 evalu2 p?-expr env))
+            (cons #f (evalu2 evalu2 then-expr env))
+            (cons #f (evalu2 evalu2 else-expr env)))]
+       [boi
+        (cons #t (cons boi env))]))
+   evalu))
+
 (define (eval-all evalu env result . exprs)
   (if (empty? exprs)
       (cons result env)
@@ -133,19 +145,28 @@
   (apply eval-all (cons basic-eval (cons env (cons result exprs)))))
 
 (define my-eval
-  (add-def
+  (add-if
+   (add-def
     (add-nums
      (add-bools
       (add-quote
        (add-eval
-        basic-eval))))))
+        basic-eval)))))))
 
-(define (my-eval-all env result . exprs)
-  (apply eval-all (cons my-eval (cons env (cons result exprs)))))
+(define (my-eval-all env . exprs)
+  (apply eval-all (cons my-eval (cons env (cons '() exprs)))))
+
+(define (my-eval-go env . exprs)
+  (car (apply my-eval-all (cons env exprs))))
 
 (define empty-env (hash))
 
 (define basic-env
   `#hash((+ . ,(thunk +))
-        (- . ,(thunk -))
-        (* . ,(thunk *))))
+         (- . ,(thunk -))
+         (* . ,(thunk *))
+         (eq? . ,(thunk eq?))))
+
+(provide basic-env
+         my-eval-all
+         my-eval-go)
